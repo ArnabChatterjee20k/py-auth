@@ -32,6 +32,8 @@ User Request (login/signup/etc)
 
 Token = jwt => representing authentication state rather the authentication process itself
 
+# TODO
+[] Parse the core models into storage db form for various adapter
 
 # Improvements
 [] Flexible non restricted data schemas -> need to map to the storage layer as well for that we need to interally map
