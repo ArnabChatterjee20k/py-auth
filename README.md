@@ -8,7 +8,7 @@ User Request (login/signup/etc)
         │
         ▼
  ┌───────────────────┐
- │   AuthProvider    │   e.g. Password() / JWT() / Oauth()
+ │   AuthProvider    │   e.g. Password() / Oauth()
  └───────────────────┘
         │
         │  (1) validate credentials / tokens
@@ -29,3 +29,9 @@ User Request (login/signup/etc)
         │  (4) check what user is allowed to do
         ▼
    Response back to user
+
+Token = jwt => representing authentication state rather the authentication process itself
+
+
+# Improvements
+[] Flexible non restricted data schemas -> need to map to the storage layer as well for that we need to interally map
