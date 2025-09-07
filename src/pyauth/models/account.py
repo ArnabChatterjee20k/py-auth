@@ -15,6 +15,6 @@ class Account:
 
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    last_active_at: datetime = None
+    last_active_at: datetime | None = None
 
     metadata: Dict = field(default_factory=dict)
