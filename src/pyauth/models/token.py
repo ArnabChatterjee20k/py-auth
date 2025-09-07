@@ -19,11 +19,11 @@ class Token:
     ):
         claims = payload.copy()
         if not_before:
-            claims["nbf"] = int(not_before.timestamp())
+            claims["nbf"] = not_before.timestamp()
         if expires_at:
-            claims["exp"] = int(expires_at.timestamp())
+            claims["exp"] = expires_at.timestamp()
         # issues_at
-        claims["iat"] = int(datetime.now().timestamp())
+        claims["iat"] = datetime.now().timestamp()
         return jwt.encode(claims, self._secret, algorithm=self._algo)
 
     def extract(self, token: str) -> dict:
@@ -61,4 +61,4 @@ class Token:
 
     @staticmethod
     def seconds(after: int):
-        datetime.now + timedelta(seconds=after)
+        return datetime.now() + timedelta(seconds=after)
