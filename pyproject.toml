@@ -7,3 +7,19 @@ requires-python = ">=3.12"
 dependencies = [
     "pyjwt>=2.10.1",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-cov>=6.3.0",
+    "ruff",
+    "black",
+    "mypy",
+    "bandit",
+    "safety"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pyauth*"]
+exclude = ["tests*"] 

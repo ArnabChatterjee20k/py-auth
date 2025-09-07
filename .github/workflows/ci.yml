@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install UV
+        run: pip install "uv>=0.1.42"
+
+      - name: Install dev dependencies
+        run: uv install --group dev
+
+      - name: Run all tasks
+        run: make all
