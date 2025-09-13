@@ -10,8 +10,7 @@ class Pyauth:
     ):
         self._provider = provider
         self._storage = storage
-        self._permissions = permissions
-        self._permissions.init_storage(storage)
+        self._permissions = permissions.get_adapter().init_storage(storage)
 
     # account
     async def create_account(self, payload: Payload) -> Account:
