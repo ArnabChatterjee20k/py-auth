@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
+from . import Model
 from datetime import datetime
 from typing import Dict
 
 
 @dataclass
-class Account:
+class Account(Model):
     """Representing authenticable entities. eg., user, apikeys, oauth,etc"""
 
     uid: str

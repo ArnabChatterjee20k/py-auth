@@ -1,43 +1,57 @@
-from providers import Provider
+from providers import Provider, Payload
+from .storage import Storage
+from .permissions import Permissions
+from .models import Account
 
 
 class Pyauth:
-    def __init__(self, provider: Provider):
+    async def __init__(
+        self, provider: Provider, storage: Storage, permissions: Permissions
+    ):
         self._provider = provider
+        self._storage = storage
+        self._permissions = permissions
+        self._permissions.init_storage(storage)
 
     # account
-    def create_account(self):
+    async def create_account(self, payload: Payload) -> Account:
+        self._provider.validate_paylod(payload)
+        async with self._storage as storage:
+            account = self._provider.create_account(payload)
+            self._storage.create(account)
+            self._storage.create(account.permissions)
+
+        return self._provider.create_account(payload)
+
+    async def logout_account(self):
         pass
 
-    def logout_account(self):
+    async def get_account(self):
         pass
 
-    def get_account(self):
+    async def delete_account(self):
         pass
 
-    def delete_account(self):
+    async def update_account(self):
         pass
 
-    def update_account(self):
+    async def block_account(self):
         pass
 
-    def block_account(self):
+    async def verify_account(self):
         pass
 
-    def verify_account(self):
-        pass
-
-    def get_sessions(self):
+    async def get_sessions(self):
         pass
 
     # session
-    def start_session(self):
+    async def start_session(self):
         pass
 
-    def end_session(self):
+    async def end_session(self):
         pass
 
-    def get_current_account(self):
+    async def get_current_account(self):
         pass
 
     # roles

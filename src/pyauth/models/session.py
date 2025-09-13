@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Optional, Dict
+from . import Model
 
 
 @dataclass
-class Session:
+class Session(Model):
     """Represents an authenticated session for an account (user/api key)."""
 
     sid: str

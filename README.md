@@ -30,7 +30,12 @@ User Request (login/signup/etc)
         ▼
    Response back to user
 
-Token = jwt => representing authentication state rather the authentication process itself
+* Storage is always central → everything reads/writes through it.
+* AuthProvider and PermissionAdapter are just transformers/logic layers → they don’t persist anything themselves.
+* Transactions → wrap multiple operations in async with storage() so signup + session + roles is atomic.
+* Direct storage access → init_storage() allows advanced operations like ReBAC graph queries without breaking encapsulation.
+* Roles are always present → storage enforces existence; adapter interprets semantics.
+* Token = jwt => representing authentication state rather the authentication process itself
 
 # TODO
 [] Parse the core models into storage db form for various adapter

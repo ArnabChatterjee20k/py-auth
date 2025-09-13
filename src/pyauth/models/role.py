@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from . import Model
 
 
 @dataclass
-class Role:
+class Role(Model):
     uid: str
     account_uid: str
     session_uid: str | None = None
