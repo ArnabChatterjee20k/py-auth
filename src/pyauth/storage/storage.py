@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar, Type
+from typing import TypeVar, Type, Coroutine, Any
 from ..models import Model
 
 T = TypeVar("T", bound=Model)
@@ -12,7 +12,7 @@ class Storage(ABC):
     # here we dont have mutable sharable resource so using the Storage only as the Session only instead of a separate Session
     # for starting a transactions
     async def __aenter__(self) -> "Storage":
-        self.begin()
+        await self.begin()
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -23,8 +23,7 @@ class Storage(ABC):
         await self.close()
 
     @abstractmethod
-    async def create(self, model: Type[T]) -> T:
-        # data = model.to_dict()
+    async def create(self, model: T) -> T:
         pass
 
     @abstractmethod
@@ -53,4 +52,8 @@ class Storage(ABC):
 
     @abstractmethod
     async def close(self):
+        pass
+
+    @abstractmethod
+    async def init_schema(self, schema: Model):
         pass
