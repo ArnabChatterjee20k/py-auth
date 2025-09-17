@@ -36,6 +36,7 @@ User Request (login/signup/etc)
 * Direct storage access → init_storage() allows advanced operations like ReBAC graph queries without breaking encapsulation.
 * Roles are always present → storage enforces existence; adapter interprets semantics.
 * Token = jwt => representing authentication state rather the authentication process itself
+* The base models sending the schema and the storage adapter converting them based on the types they are encountering leading to a flexible schema
 
 # TODO
 [] Parse the core models into storage db form for various adapter
