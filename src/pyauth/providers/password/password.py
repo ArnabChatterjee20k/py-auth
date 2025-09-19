@@ -10,9 +10,8 @@ class Password(Provider):
 
     def create_account(self, payload: PasswordPayload):
         payload.password = bcrypt.hashpw(payload.password, bcrypt.gensalt())
-        account = self._storage.create(Account.__name__, **{**payload.to_dict()})
-        data = self.get_model_from_dict(Account, account)
-        return data
+        account = Account(**payload.to_dict())
+        return account
 
     @staticmethod
     def validate_paylod(paylod: PasswordPayload):

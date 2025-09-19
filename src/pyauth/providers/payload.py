@@ -4,7 +4,8 @@ from dataclasses import dataclass, asdict, field
 
 @dataclass
 class Payload(ABC):
-    permissions: list = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
 
     @abstractmethod
     def validate(self) -> "Payload":
