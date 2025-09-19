@@ -8,16 +8,16 @@ from . import Model
 class Session(Model):
     """Represents an authenticated session for an account (user/api key)."""
 
-    sid: str
-    account_uid: str
+    sid: str = field(metadata={"index": True, "unique": True})
+    account_uid: str = field(metadata={"index": True})
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
 
     is_active: bool = False
     is_blocked: bool = False
 
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
     expires_at: Optional[datetime] = None
 
     metadata: Dict = field(default_factory=dict)

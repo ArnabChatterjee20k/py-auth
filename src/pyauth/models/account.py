@@ -8,7 +8,7 @@ from typing import Dict
 class Account(Model):
     """Representing authenticable entities. eg., user, apikeys, oauth,etc"""
 
-    uid: str
+    uid: str = field(metadata={"index": True, "unique": True})
     permissions: list[str] = field(default_factory=list)
 
     is_active: bool = True
