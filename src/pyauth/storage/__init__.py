@@ -1,3 +1,3 @@
-from .storage import Storage
+from .storage import Storage, StorageSession
 
-__all__ = [Storage]
+__all__ = [Storage, StorageSession]
