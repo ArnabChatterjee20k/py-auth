@@ -16,11 +16,14 @@ class CurrentTimeStamp:
 
 @dataclass
 class Model(ABC):
-    # making both exclude and id as class var to ignore during data representation(fields() ignore classvar)
-    exclude: ClassVar[list[str]] = []
-    id: ClassVar[Optional[int]] = field(
+    # making both exclude class var to ignore during data representation(fields() ignore classvar)
+    # including id in exclude to provide it in the schema and not get transfered in the get_value
+    # init=False => cant init a value as it is auto
+    exclude: ClassVar[list[str]] = ["id"]
+    id: Optional[int] = field(
         default=None,
         metadata={"primary_key": True, "index": True, "auto_increment": True},
+        init=False,
     )
 
     def to_dict(self) -> dict:
