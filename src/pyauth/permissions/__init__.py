@@ -1,3 +1,3 @@
-from permissions import Permissions
+from .permissions import Permissions
 
 __all__ = [Permissions]

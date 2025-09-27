@@ -28,9 +28,11 @@ class SQLiteSession(SQLSession):
         }
         return mapping.get(py_type, "TEXT")
 
-    async def execute(self, *args):
-        async with self.connection.execute(*args) as cursor:
-            await self.connection.commit()
+    async def execute(self, sql: str, *args, force_commit=False):
+        async with self.connection.execute(sql, *args) as cursor:
+            # commit is getting controlled externall via transactions
+            if force_commit:
+                await self.connection.commit()
             return cursor.lastrowid
 
     async def init_index(self, table: str, indexes: list[str]):

@@ -1,19 +1,73 @@
 from abc import ABC, abstractmethod
-from ..storage import Storage
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Any
+from ..models import Role
+from ..storage import StorageSession
+from enum import Enum
 
 
-class PermissionSession(ABC):
-    def __init__(self):
-        self._storage = None
+class Action(str, Enum):
+    """
+    Every permissions boil down to either any of this, now adapters can use them in any way they want.
+    Example ->
+        1. RBAC can directly have them
+        2. ReBAC store the relation configs in a separate table -> {relation:{friendsOnly:[read, write]}}
+    """
 
-    """Actuall permession session which requires the storage adapter as well to work with"""
+    CREATE = "create"
+    READ = "read"
+    UPDATE = "update"
+    DELETE = "delete"
 
-    def init_storage(self, storage: Storage) -> "PermissionSession":
-        self._storage = storage
-        return self
+
+class InvalidPermissionAction(Exception):
+    def __init__(self, msg: str = None, *args):
+        message = (
+            f"Invalid permission action: {msg}" if msg else "Invalid permission action"
+        )
+        super().__init__(message, *args)
 
 
 class Permissions(ABC):
+    _storage_session: StorageSession = None
+
+    @asynccontextmanager
+    async def set_storage_session(
+        self, storage: StorageSession
+    ) -> AsyncGenerator["Permissions", Any]:
+        try:
+            self._storage_session = storage
+            yield self
+        finally:
+            self._storage_session = None
+
+    def get_storage_session(self) -> StorageSession:
+        if self._storage_session is None:
+            raise ValueError("Storage is not set for this Permissions adapter.")
+        return self._storage_session
+
+    async def assign(self, role: Role) -> Role:
+        role.permissions = self.parse(role.permissions)
+        session = self.get_storage_session()
+        await session.create(role)
+
     @abstractmethod
-    def get_adapter(self) -> PermissionSession:
+    async def get(self):
+        pass
+
+    @abstractmethod
+    async def remove(self):
+        pass
+
+    @abstractmethod
+    async def check(self):
+        pass
+
+    @abstractmethod
+    async def init_schema(self):
+        session = self.get_storage_session()
+        await session.init_schema(Role)
+
+    @abstractmethod
+    def parse(self, permissions: list[str]) -> list[str]:
         pass

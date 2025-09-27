@@ -14,6 +14,7 @@ class CurrentTimeStamp:
     pass
 
 
+# TODO: have a validator param : validate=True -> when objects are created if not following the schema just throws an error
 @dataclass
 class Model(ABC):
     # making both exclude class var to ignore during data representation(fields() ignore classvar)
@@ -93,6 +94,7 @@ class Model(ABC):
                     t.__name__ if hasattr(t, "__name__") else str(t)
                     for t in get_args(field_type)
                 ]
+            # only if we have something like list[type] or List[type] otherwise if we have list[type] | None it will get ignored as it will be union
             elif (
                 origin in (list, dict)
                 or str(field_type).startswith("typing.List")

@@ -1,26 +1,38 @@
-from providers import Provider, Payload
+from .providers import Provider, Payload
+import asyncio
+from .token import Token
 from .storage import Storage
 from .permissions import Permissions
-from .models import Account
+from .models import Account, Session, Role
 
 
 class Pyauth:
-    async def __init__(
-        self, provider: Provider, storage: Storage, permissions: Permissions
-    ):
+    def __init__(self, provider: Provider, storage: Storage, permissions: Permissions):
         self._provider = provider
         self._storage = storage
-        self._permissions = permissions.get_adapter().init_storage(storage)
+        self._permissions = permissions
+
+    async def init_schema(self):
+        models = [Account, Session]
+        # HACK: scoping task group inside session and permission context so that connection doesn't get closed
+        async with self._storage.session() as session:
+            async with self._permissions.set_storage_session(session) as permission:
+                async with asyncio.TaskGroup() as group:
+                    for model in models:
+                        group.create_task(session.init_schema(model))
+                    group.create_task(permission.init_schema())
 
     # account
     async def create_account(self, payload: Payload) -> Account:
         self._provider.validate_paylod(payload)
-        async with self._storage as storage:
+        async with self._storage.begin() as storage:
             account = self._provider.create_account(payload)
-            self._storage.create(account)
-            self._storage.create(account.permissions)
-
-        return self._provider.create_account(payload)
+            account = await storage.create(account)
+            async with self._permissions.set_storage_session(storage) as permission:
+                await permission.assign(
+                    Role(account_uid=account.uid, permissions=payload.permissions)
+                )
+        return account
 
     async def logout_account(self):
         pass
@@ -54,16 +66,16 @@ class Pyauth:
         pass
 
     # roles
-    def assign_role(self):
+    def grant(self):
         pass
 
-    def update_role(self):
+    def revoke(self):
         pass
 
-    def verify_role(self):
+    def check(self):
         pass
 
-    def get_roles(self):
+    def list(self):
         pass
 
     # rate-limit/throttling/control

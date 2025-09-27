@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, AbstractAsyncContextManager
 from typing import AsyncGenerator, Any
 from ..models import Model
 
@@ -41,9 +41,10 @@ class Storage(ABC):
         self.conn_uri = conn_uri
         self._debug = debug
 
+    # not using here asyncontextmanager and async to type hint properly
+    # AbstractAsyncContextManager -> async and asynccontextmanager
     @abstractmethod
-    @asynccontextmanager
-    async def session(self):
+    def session(self) -> AbstractAsyncContextManager[StorageSession]:
         pass
 
     @asynccontextmanager

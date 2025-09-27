@@ -9,8 +9,9 @@ class Password(Provider):
         super().__init__(*args)
 
     def create_account(self, payload: PasswordPayload):
-        payload.password = bcrypt.hashpw(payload.password, bcrypt.gensalt())
-        account = Account(**payload.to_dict())
+        # needed bytes
+        password = bcrypt.hashpw(payload.password.encode("utf-8"), bcrypt.gensalt())
+        account = Account(uid=payload.identifier, password=password)
         return account
 
     @staticmethod

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict, field
+from typing import Optional
 
 
 @dataclass
@@ -12,5 +13,6 @@ class Payload(ABC):
         """Implement provider-specific validation of the payload."""
         pass
 
-    def to_dict(self) -> dict:
-        return asdict(self)
+    def to_dict(self, exclude: Optional[list[str]] = None) -> dict:
+        exclude = exclude or []
+        return {k: v for k, v in asdict(self).items() if k not in exclude}
