@@ -9,8 +9,8 @@ class Account(Model):
     """Representing authenticable entities. eg., user, apikeys, oauth,etc"""
 
     uid: str = field(metadata={"index": True, "unique": True})
-    password: str
     permissions: list[str] = field(default_factory=list)
+    password: str | None = None
 
     is_active: bool = True
     is_blocked: bool = False

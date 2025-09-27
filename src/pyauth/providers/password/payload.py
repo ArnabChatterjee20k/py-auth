@@ -8,6 +8,6 @@ class PasswordPayload(Payload):
     password: str | None = None
     metadata: dict = field(default_factory=dict)
 
-    def validate(self) -> "PasswordPayload":
+    def validate(self) -> None:
         if not self.identifier or not self.password:
             raise ValueError("Password and identifier required")

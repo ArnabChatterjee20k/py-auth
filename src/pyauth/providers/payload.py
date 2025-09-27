@@ -9,7 +9,7 @@ class Payload(ABC):
     metadata: dict = field(default_factory=dict)
 
     @abstractmethod
-    def validate(self) -> "Payload":
+    def validate(self) -> None:
         """Implement provider-specific validation of the payload."""
         pass
 

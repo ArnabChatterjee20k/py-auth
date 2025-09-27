@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar
 from contextlib import asynccontextmanager, AbstractAsyncContextManager
-from typing import AsyncGenerator, Any
+from typing import AsyncGenerator, Any, Union, Type, Optional
 from ..models import Model
 
 T = TypeVar("T", bound=Model)
@@ -14,11 +14,20 @@ class StorageSession(ABC):
     @abstractmethod
     async def create(self, model: T) -> T: ...
     @abstractmethod
-    async def update(self): ...
+    async def update(
+        self, model: Union[T, Type[T]], filters: dict, updates: dict
+    ) -> T: ...
     @abstractmethod
     async def delete(self): ...
     @abstractmethod
-    async def get(self, model: T, **selections) -> T: ...
+    async def get(
+        self,
+        model: Union[T, Type[T]],
+        for_update: bool = False,
+        filters: Optional[dict] = None,
+        contains: Optional[dict] = None,
+    ) -> T: ...
+
     @abstractmethod
     async def begin(self): ...
     @abstractmethod
@@ -61,3 +70,13 @@ class Storage(ABC):
                 raise e
             finally:
                 await session.close()
+
+    def get_model_class(model: object) -> Type[Model]:
+        # Model instance (Model()) is provided
+        if isinstance(model, Model):
+            return model.__class__
+        # Model class is given
+        elif isinstance(model, type) and issubclass(model, Model):
+            return model
+
+        raise TypeError("Invalid model type")

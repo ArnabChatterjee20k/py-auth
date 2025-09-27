@@ -46,10 +46,9 @@ class Permissions(ABC):
             raise ValueError("Storage is not set for this Permissions adapter.")
         return self._storage_session
 
-    async def assign(self, role: Role) -> Role:
-        role.permissions = self.parse(role.permissions)
-        session = self.get_storage_session()
-        await session.create(role)
+    @abstractmethod
+    async def create(self, role: Role) -> Role:
+        pass
 
     @abstractmethod
     async def get(self):
@@ -64,9 +63,12 @@ class Permissions(ABC):
         pass
 
     @abstractmethod
+    async def update(self, role: Role) -> Role:
+        pass
+
+    @abstractmethod
     async def init_schema(self):
-        session = self.get_storage_session()
-        await session.init_schema(Role)
+        pass
 
     @abstractmethod
     def parse(self, permissions: list[str]) -> list[str]:

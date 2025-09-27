@@ -29,7 +29,7 @@ class Pyauth:
             account = self._provider.create_account(payload)
             account = await storage.create(account)
             async with self._permissions.set_storage_session(storage) as permission:
-                await permission.assign(
+                await permission.create(
                     Role(account_uid=account.uid, permissions=payload.permissions)
                 )
         return account
@@ -37,8 +37,12 @@ class Pyauth:
     async def logout_account(self):
         pass
 
-    async def get_account(self):
-        pass
+    async def get_account(self, payload: Payload) -> Account:
+        self._provider.validate_paylod(payload)
+        async with self._storage.session() as storage:
+            account = self._provider.create_account(payload)
+            account = await storage.get(account, filters={"uid": account.uid})
+        return account
 
     async def delete_account(self):
         pass

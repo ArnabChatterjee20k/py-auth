@@ -27,9 +27,11 @@ class Model(ABC):
         init=False,
     )
 
-    def to_dict(self) -> dict:
+    def to_dict(self, exclude=[]) -> dict:
         data = asdict(self)
-        return {k: v for k, v in data.items() if k not in self.exclude}
+        return {
+            k: v for k, v in data.items() if k not in self.exclude and k not in exclude
+        }
 
     def get_fields(self):
         return {f.name for f in fields(self)}
@@ -63,10 +65,12 @@ class Model(ABC):
         return insert_data
 
     @classmethod
-    def get_schema(cls):
+    def get_schema(cls, exclude=[]):
         """Generate json schema; default values are ignored and only default_factory are considered"""
         schema = {}
         for field in fields(cls):
+            if field.name in exclude:
+                continue
             field_type = field.type
             field_name = field.name
             origin = get_origin(field_type)

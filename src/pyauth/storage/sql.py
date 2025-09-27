@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import json
-from . import StorageSession
+from . import StorageSession, Storage
 from ..models import Model, MissingDefault, CurrentTimeStamp
 
 
