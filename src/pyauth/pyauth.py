@@ -6,6 +6,7 @@ from .permissions import Permissions
 from .models import Account, Session, Role
 
 
+# TODO: Tie up provider with storage as well similar to permissions(not doing it currently as oauth2 can get quite complex in that way)
 class Pyauth:
     def __init__(self, provider: Provider, storage: Storage, permissions: Permissions):
         self._provider = provider
@@ -23,29 +24,27 @@ class Pyauth:
                     group.create_task(permission.init_schema())
 
     # account
+    # in every function the payload should match the stored account
+    # example -> if password adapter then the password of the payload should be same as the present account
     async def create_account(self, payload: Payload) -> Account:
-        self._provider.validate_paylod(payload)
         async with self._storage.begin() as storage:
-            account = self._provider.create_account(payload)
-            account = await storage.create(account)
+            account = self._provider.create(payload)
             async with self._permissions.set_storage_session(storage) as permission:
                 await permission.create(
                     Role(account_uid=account.uid, permissions=payload.permissions)
                 )
         return account
 
-    async def logout_account(self):
-        pass
-
     async def get_account(self, payload: Payload) -> Account:
-        self._provider.validate_paylod(payload)
         async with self._storage.session() as storage:
             account = self._provider.create_account(payload)
             account = await storage.get(account, filters={"uid": account.uid})
         return account
 
-    async def delete_account(self):
-        pass
+    async def delete_account(self, account_id: str):
+        async with self._storage.session() as storage:
+            async with asyncio.TaskGroup() as group:
+                group.create_task()
 
     async def update_account(self):
         pass

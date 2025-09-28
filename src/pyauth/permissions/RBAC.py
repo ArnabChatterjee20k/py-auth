@@ -33,6 +33,8 @@ class RBAC(Permissions):
         return await session.create(role)
 
     async def get(self, role: Role):
+        if role.permissions:
+            role.permissions = self.parse(role.permissions)
         session = self.get_storage_session()
         # exclude account id or session id if they are none
         filters = role.to_dict(exclude=["permissions"], include_none=False)
@@ -40,12 +42,12 @@ class RBAC(Permissions):
         return await session.get(Role, filters=filters, contains=contains)
 
     async def update(self, role: Role) -> Role:
+        role.permissions = self.parse(role.permissions)
         session = self.get_storage_session()
         # exclude account id or session id if they are none
         filters = role.to_dict(exclude=["permissions"], include_none=False)
         # sqlite doesn't implement row level locking
         account_role = await session.get(model=Role, for_update=True, filters=filters)
-        account_role.permissions = role.permissions
         updated_accont_role = await session.update(
             Role,
             filters={"id": account_role.id, **role.to_dict(["permissions"])},

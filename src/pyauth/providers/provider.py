@@ -1,16 +1,51 @@
 from abc import ABC, abstractmethod
-from dataclasses import is_dataclass, fields
-from typing import TypeVar, Type
+from typing import TypeVar, Type, AsyncGenerator, Any
+from contextlib import asynccontextmanager
 from ..models import Model, Account, Role
-from ..storage import Storage
+from ..storage import StorageSession
 from .payload import Payload
 
 T = TypeVar("T", bound=Model)
 
 
+class InvalidAccount(Exception):
+    def __init__(self, msg: str = None, *args):
+        message = f"Invalid account: {msg}" if msg else "Invalid account"
+        super().__init__(message, *args)
+
+
 class Provider(ABC):
+    _storage_session: StorageSession = None
+
+    @asynccontextmanager
+    async def set_storage_session(
+        self, storage: StorageSession
+    ) -> AsyncGenerator["Provider", Any]:
+        try:
+            self._storage_session = storage
+            yield self
+        finally:
+            self._storage_session = None
+
+    def get_storage_session(self) -> StorageSession:
+        if self._storage_session is None:
+            raise ValueError("Storage is not set for this Permissions adapter.")
+        return self._storage_session
+
     @abstractmethod
-    def create_account(self, payload: Payload) -> Account:
+    async def create(self, payload: Payload) -> Account:
+        pass
+
+    @abstractmethod
+    async def get(self, paylod: Payload) -> Account:
+        pass
+
+    @abstractmethod
+    async def delete(self, paylod: Payload) -> bool:
+        pass
+
+    @abstractmethod
+    async def update(self, paylod: Payload) -> Account:
         pass
 
     @staticmethod
