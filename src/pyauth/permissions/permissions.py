@@ -55,11 +55,11 @@ class Permissions(ABC):
         pass
 
     @abstractmethod
-    async def remove(self):
+    async def remove(self, role: Role, permissions: list[str]) -> Role:
         pass
 
     @abstractmethod
-    async def check(self):
+    async def check(self, role: Role) -> bool:
         pass
 
     @abstractmethod
@@ -72,4 +72,7 @@ class Permissions(ABC):
 
     @abstractmethod
     def parse(self, permissions: list[str]) -> list[str]:
+        pass
+
+    async def delete(self) -> Role:
         pass

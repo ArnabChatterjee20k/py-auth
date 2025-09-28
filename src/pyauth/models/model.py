@@ -27,10 +27,14 @@ class Model(ABC):
         init=False,
     )
 
-    def to_dict(self, exclude=[]) -> dict:
+    def to_dict(self, exclude: list[str] = [], include_none: bool = True) -> dict:
         data = asdict(self)
         return {
-            k: v for k, v in data.items() if k not in self.exclude and k not in exclude
+            k: v
+            for k, v in data.items()
+            if k not in self.exclude
+            and k not in exclude
+            and (include_none or v is not None)
         }
 
     def get_fields(self):

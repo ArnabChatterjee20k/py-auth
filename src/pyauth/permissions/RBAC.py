@@ -30,17 +30,19 @@ class RBAC(Permissions):
     async def create(self, role: Role) -> Role:
         role.permissions = self.parse(role.permissions)
         session = self.get_storage_session()
-        await session.create(role)
+        return await session.create(role)
 
     async def get(self, role: Role):
         session = self.get_storage_session()
-        filters = role.to_dict(exclude=["permissions"])
+        # exclude account id or session id if they are none
+        filters = role.to_dict(exclude=["permissions"], include_none=False)
         contains = {"permissions": role.permissions} if role.permissions else None
         return await session.get(Role, filters=filters, contains=contains)
 
     async def update(self, role: Role) -> Role:
         session = self.get_storage_session()
-        filters = role.to_dict(exclude=["permissions"])
+        # exclude account id or session id if they are none
+        filters = role.to_dict(exclude=["permissions"], include_none=False)
         # sqlite doesn't implement row level locking
         account_role = await session.get(model=Role, for_update=True, filters=filters)
         account_role.permissions = role.permissions
@@ -50,3 +52,29 @@ class RBAC(Permissions):
             updates={"permissions": role.permissions},
         )
         return updated_accont_role
+
+    async def check(self, role: Role):
+        permission = self.get(role)
+        if permission:
+            return True
+        return False
+
+    async def remove(self, role: Role, permissions_to_remove: list[str]) -> Role:
+        account_role = await self.get(role)
+        if not account_role:
+            raise InvalidPermissionAction("Account not found.")
+
+        new_permissions = [
+            p for p in account_role.permissions if p not in permissions_to_remove
+        ]
+
+        if not new_permissions:
+            return account_role
+
+        account_role.permissions = new_permissions
+        return await self.update(account_role)
+
+    async def delete(self, role_id: str):
+        session = self.get_storage_session()
+        filters = {"id": role_id}
+        await session.delete(Role, filters=filters)

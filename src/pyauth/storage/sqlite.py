@@ -132,17 +132,17 @@ class SQLiteSession(SQLSession):
         result.id = row[0]
         return result
 
-    async def delete(self, model: Model):
-        """Delete a row based on model.id"""
-        if not isinstance(model, Model):
-            raise ValueError("delete expects a Model instance")
-        if model.id is None:
-            raise ValueError("Cannot delete model without id")
+    async def delete(self, model: Union[T, Type[T]], filters: dict):
+        """Delete a row based on model id"""
+        table = Storage.get_model_class(model)
+        table_name = table.__name__.lower()
 
-        table_name = model.__class__.__name__.lower()
-        sql = f"DELETE FROM {table_name} WHERE id=?"
+        where_clause = " AND ".join([f"{attr}=?" for attr in filters])
+        where_values = list(filters.values())
 
-        async with self.connection.execute(sql, (model.id,)):
+        sql = f"DELETE FROM {table_name} WHERE {where_clause}"
+
+        async with self.connection.execute(sql, (*where_values,)):
             await self.connection.commit()
 
         return True
