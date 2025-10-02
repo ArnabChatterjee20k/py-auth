@@ -39,7 +39,5 @@ User Request (login/signup/etc)
 * The base models sending the schema and the storage adapter converting them based on the types they are encountering leading to a flexible schema
 
 # TODO
-[] Parse the core models into storage db form for various adapter
-
-# Improvements
-[] Flexible non restricted data schemas -> need to map to the storage layer as well for that we need to interally map
+[] Cache adapter support(pycache)
+[] Session rotation

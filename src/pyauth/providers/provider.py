@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Type, AsyncGenerator, Any
 from contextlib import asynccontextmanager
-from ..models import Model, Account, Role
+from ..models import Model, Account
 from ..storage import StorageSession
 from .payload import Payload
 
@@ -29,7 +29,7 @@ class Provider(ABC):
 
     def get_storage_session(self) -> StorageSession:
         if self._storage_session is None:
-            raise ValueError("Storage is not set for this Permissions adapter.")
+            raise ValueError("Storage is not set")
         return self._storage_session
 
     @abstractmethod
@@ -45,7 +45,7 @@ class Provider(ABC):
         pass
 
     @abstractmethod
-    async def update(self, paylod: Payload) -> Account:
+    async def update(self, payload: Payload, account: Account) -> Account:
         pass
 
     @staticmethod

@@ -27,7 +27,15 @@ class StorageSession(ABC):
         filters: Optional[dict] = None,
         contains: Optional[dict] = None,
     ) -> T: ...
-
+    @abstractmethod
+    async def list(
+        self,
+        model: Union[T, Type[T]],
+        limit: int = 25,
+        after_id: Optional[int] = None,
+        filters: Optional[dict] = None,
+        contains: Optional[dict] = None,
+    ) -> T: ...
     @abstractmethod
     async def begin(self): ...
     @abstractmethod

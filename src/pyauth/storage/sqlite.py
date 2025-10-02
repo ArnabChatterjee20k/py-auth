@@ -100,6 +100,56 @@ class SQLiteSession(SQLSession):
 
         return result
 
+    async def list(
+        self, model, limit=25, after_id: int = None, filters=None, contains=None
+    ):
+        table = Storage.get_model_class(model)
+        table_name = table.__name__.lower()
+
+        where = ""
+        values = []
+
+        if filters:
+            where_clauses = [f"{attribute}=?" for attribute in filters]
+            values.extend(filters.values())
+
+            if after_id is not None:
+                where_clauses.append("id > ?")
+                values.append(after_id)
+
+            where = " AND ".join(where_clauses)
+            where = f"WHERE {where}"
+        elif after_id is not None:
+            where = "WHERE id > ?"
+            values.append(after_id)
+
+        select = f"SELECT * FROM {table_name} {where} ORDER BY id ASC LIMIT {limit}"
+
+        async with self.connection.execute(select, values) as cursor:
+            rows = await cursor.fetchall()
+
+        results = []
+
+        schema = [attribute for attribute in model.get_schema()]
+        for row in rows:
+            result_data = dict(zip(schema[1:], row[1:]))
+            obj = table(**result_data)
+            obj.id = row[0]
+
+            if contains:
+                valid = True
+                for key, contain_value in contains.items():
+                    value = getattr(obj, key, None)
+                    if value is None or contain_value not in value:
+                        valid = False
+                        break
+                if not valid:
+                    continue
+
+            results.append(obj)
+
+        return results
+
     async def update(self, model: Model, filters: dict, updates: dict):
         """Update a row based on model.id using get_schema() order"""
         if not filters:

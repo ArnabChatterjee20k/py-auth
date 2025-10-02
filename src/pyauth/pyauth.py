@@ -1,4 +1,4 @@
-from .providers import Provider, Payload
+from .providers import Provider, Payload, InvalidAccount
 import asyncio
 from .token import Token
 from .storage import Storage
@@ -6,7 +6,6 @@ from .permissions import Permissions
 from .models import Account, Session, Role
 
 
-# TODO: Tie up provider with storage as well similar to permissions(not doing it currently as oauth2 can get quite complex in that way)
 class Pyauth:
     def __init__(self, provider: Provider, storage: Storage, permissions: Permissions):
         self._provider = provider
@@ -28,7 +27,8 @@ class Pyauth:
     # example -> if password adapter then the password of the payload should be same as the present account
     async def create_account(self, payload: Payload) -> Account:
         async with self._storage.begin() as storage:
-            account = self._provider.create(payload)
+            async with self._provider.set_storage_session(storage) as provider:
+                account = await provider.create(payload)
             async with self._permissions.set_storage_session(storage) as permission:
                 await permission.create(
                     Role(account_uid=account.uid, permissions=payload.permissions)
@@ -37,17 +37,32 @@ class Pyauth:
 
     async def get_account(self, payload: Payload) -> Account:
         async with self._storage.session() as storage:
-            account = self._provider.create_account(payload)
-            account = await storage.get(account, filters={"uid": account.uid})
+            async with self._provider.set_storage_session(storage) as provider:
+                account = await provider.get(payload)
         return account
 
-    async def delete_account(self, account_id: str):
+    async def delete_account(self, payload: Payload):
         async with self._storage.session() as storage:
-            async with asyncio.TaskGroup() as group:
-                group.create_task()
+            async with self._provider.set_storage_session(storage) as provider:
+                account = await provider.get(payload)
+                if not account:
+                    return InvalidAccount("Account not found")
+                async with self._permissions.set_storage_session(
+                    storage
+                ) as permissions:
+                    async with asyncio.TaskGroup() as group:
+                        # TODO: delete sessions as well -> might be using some queuing mechanism(or might be let user do this)
+                        group.create_task(provider.delete(payload))
+                        group.create_task(permissions.delete(account.uid))
 
-    async def update_account(self):
-        pass
+    async def update_account(self, payload: Payload, updated_account: Account):
+        async with self._storage.session() as storage:
+            async with self._provider.set_storage_session(storage) as provider:
+                account = await provider.get(payload)
+                if not account:
+                    return InvalidAccount("Account not found")
+                account = await provider.update(payload, updated_account)
+        return account
 
     async def block_account(self):
         pass

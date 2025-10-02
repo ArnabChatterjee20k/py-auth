@@ -29,9 +29,6 @@ class Password(Provider):
         return None
 
     async def update(self, payload: PasswordPayload, account: Account) -> Account:
-        current_account = await self.get(payload)
-        if not current_account:
-            raise InvalidAccount("Account not found")
         exclude = ["uid"]
         if account.password:
             account.password = self._get_account(payload).password

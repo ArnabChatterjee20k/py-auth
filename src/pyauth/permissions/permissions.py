@@ -74,5 +74,6 @@ class Permissions(ABC):
     def parse(self, permissions: list[str]) -> list[str]:
         pass
 
-    async def delete(self) -> Role:
+    @abstractmethod
+    async def delete(self, account_id: str, session_id: str | None = None) -> Role:
         pass

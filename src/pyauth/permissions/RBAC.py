@@ -76,7 +76,9 @@ class RBAC(Permissions):
         account_role.permissions = new_permissions
         return await self.update(account_role)
 
-    async def delete(self, role_id: str):
+    async def delete(self, account_id: str, session_id: str | None = None):
         session = self.get_storage_session()
-        filters = {"id": role_id}
+        filters = {"account_id": account_id}
+        if session_id:
+            filters["session_id"] = session_id
         await session.delete(Role, filters=filters)
