@@ -196,6 +196,9 @@ class SessionAdapter:
     async def unblock(self, sid: str) -> SessionModel:
         return await self.update(sid, {"is_blocked": False, "is_active": True})
 
+    async def set_session_active(self, sid: str, active: bool = True) -> SessionModel:
+        return await self.update(sid, {"is_active": active})
+
     async def extend(self, sid: str, seconds: int) -> SessionModel:
         session = await self.get(sid)
         if session.expires_at:

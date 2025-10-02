@@ -50,7 +50,7 @@ class Provider(ABC):
 
     @staticmethod
     @abstractmethod
-    def validate_paylod(paylod: Payload) -> bool:
+    def validate_payload(paylod: Payload) -> bool:
         pass
 
     @staticmethod

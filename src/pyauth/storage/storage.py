@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar
 from contextlib import asynccontextmanager, AbstractAsyncContextManager
-from typing import AsyncGenerator, Any, Union, Type, Optional
+from typing import AsyncGenerator, Any, Union, Type, Optional, List
 from ..models import Model
 
 T = TypeVar("T", bound=Model)
@@ -49,7 +49,7 @@ class StorageSession(ABC):
     @abstractmethod
     async def init_schema(self, schema: Model): ...
     @abstractmethod
-    async def init_index(self, table: str, indexes: list[str]): ...
+    async def init_index(self, table: str, indexes: List[str]): ...
 
 
 # to create independent sessions and connection objects and since its returning StorageSession which implements aenter and aexit , we can use `async with storage.session()`

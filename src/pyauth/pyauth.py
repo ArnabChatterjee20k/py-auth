@@ -4,13 +4,22 @@ from .token import Token
 from .storage import Storage
 from .permissions import Permissions
 from .models import Account, Session, Role
+from .session import SessionAdapter
+from typing import Optional, List
 
 
 class Pyauth:
-    def __init__(self, provider: Provider, storage: Storage, permissions: Permissions):
+    def __init__(
+        self,
+        provider: Provider,
+        storage: Storage,
+        permissions: Permissions,
+        token_secret: str,
+    ):
         self._provider = provider
         self._storage = storage
         self._permissions = permissions
+        self._session_adapter = SessionAdapter(token_secret)
 
     async def init_schema(self):
         models = [Account, Session]
@@ -70,18 +79,78 @@ class Pyauth:
     async def verify_account(self):
         pass
 
-    async def get_sessions(self):
-        pass
-
     # session
-    async def start_session(self):
-        pass
+    async def get_sessions(
+        self, account_uid: str, limit: int = 25, after_id: Optional[int] = None
+    ) -> List[Session]:
+        """Get all sessions for a specific account"""
+        async with self._storage.session() as storage:
+            async with self._session_adapter.set_storage_session(
+                storage
+            ) as session_adapter:
+                return await session_adapter.list(account_uid, limit, after_id)
 
-    async def end_session(self):
-        pass
+    async def start_session(
+        self, payload: Payload, metadata: Optional[dict] = None
+    ) -> Session:
+        """Start a new session for an account after authentication"""
+        async with self._storage.session() as storage:
+            # First verify the account exists and credentials are valid
+            async with self._provider.set_storage_session(storage) as provider:
+                account = await provider.get(payload)
+                if not account:
+                    raise InvalidAccount("Account not found")
 
-    async def get_current_account(self):
-        pass
+            # Create session for the verified account
+            async with self._session_adapter.set_storage_session(
+                storage
+            ) as session_adapter:
+                session = await session_adapter.create(account.uid, metadata)
+
+                # Update last_active_at for the account
+                async with self._provider.set_storage_session(storage) as provider:
+                    from datetime import datetime
+
+                    updated_account = Account(
+                        uid=account.uid,
+                        password=account.password,
+                        permissions=account.permissions,
+                        is_active=account.is_active,
+                        is_blocked=account.is_blocked,
+                        created_at=account.created_at,
+                        updated_at=account.updated_at,
+                        last_active_at=datetime.now(),
+                        metadata=account.metadata,
+                    )
+                    await provider.update(payload, updated_account)
+
+                return session
+
+    async def end_session(self, sid: str) -> bool:
+        """End a specific session by session ID"""
+        async with self._storage.session() as storage:
+            async with self._session_adapter.set_storage_session(
+                storage
+            ) as session_adapter:
+                return await session_adapter.set_session_active(sid, False)
+
+    async def get_current_account(self, access_token: str) -> Account:
+        """Get the current account from a valid access token"""
+        async with self._storage.session() as storage:
+            async with self._session_adapter.set_storage_session(
+                storage
+            ) as session_adapter:
+                # Verify the session and get account_uid
+                session = await session_adapter.verify(access_token)
+
+                # Get the account directly from storage using account_uid
+                # This avoids needing to create a specific payload type
+                account = await storage.get(
+                    Account, filters={"uid": session.account_uid}
+                )
+                if not account:
+                    raise InvalidAccount("Account not found")
+                return account
 
     # roles
     def grant(self):

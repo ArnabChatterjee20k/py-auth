@@ -9,7 +9,7 @@ class Password(Provider):
         super().__init__(*args)
 
     async def create(self, payload: PasswordPayload) -> Account:
-        self.validate_paylod(payload)
+        self.validate_payload(payload)
         # needed bytes
         account = self._get_account(payload)
         storage = self.get_storage_session()
@@ -23,7 +23,7 @@ class Password(Provider):
             Account, filters={"uid": payload.identifier}
         )
         if account and bcrypt.checkpw(
-            payload.password.encode("utf-8"), account.password.encode("utf-8")
+            payload.password.encode("utf-8"), account.password
         ):
             return account
         return None
@@ -50,5 +50,5 @@ class Password(Provider):
         return Account(uid=payload.identifier, password=password)
 
     @staticmethod
-    def validate_paylod(paylod: PasswordPayload):
+    def validate_payload(paylod: PasswordPayload):
         return PasswordPayload(**paylod.to_dict()).validate()
