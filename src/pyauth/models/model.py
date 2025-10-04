@@ -21,6 +21,8 @@ class Model(ABC):
     # including id in exclude to provide it in the schema and not get transfered in the get_value
     # init=False => cant init a value as it is auto
     exclude: ClassVar[list[str]] = ["id"]
+    schema_exclude: ClassVar[list[str]] = []
+
     id: Optional[int] = field(
         default=None,
         metadata={"primary_key": True, "index": True, "auto_increment": True},
@@ -73,7 +75,7 @@ class Model(ABC):
         """Generate json schema; default values are ignored and only default_factory are considered"""
         schema = {}
         for field in fields(cls):
-            if field.name in exclude:
+            if field.name in exclude or field.name in cls.schema_exclude:
                 continue
             field_type = field.type
             field_name = field.name

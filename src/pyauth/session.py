@@ -127,8 +127,8 @@ class SessionAdapter:
     ) -> SessionModel:
         try:
             claims = self._token.extract(access_token)
-        except Exception:
-            raise InvalidSession("Invalid access token")
+        except Exception as e:
+            raise InvalidSession("Invalid access token ", e)
 
         sid = claims.get("sid")
         if not sid:
@@ -154,6 +154,7 @@ class SessionAdapter:
 
         sid = claims.get("sid")
         account_uid = claims.get("account_uid")
+
         if not sid or not account_uid:
             raise InvalidSession("Invalid refresh token claims")
 

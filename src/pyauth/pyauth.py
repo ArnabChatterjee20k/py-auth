@@ -144,7 +144,7 @@ class Pyauth:
             ) as session_adapter:
                 return await session_adapter.set_session_active(sid, False)
 
-    async def get_current_account(self, access_token: str) -> Account:
+    async def get_current_account_from_session(self, access_token: str) -> Account:
         """Get the current account from a valid access token"""
         async with self._storage.session() as storage:
             async with self._session_adapter.set_storage_session(
@@ -169,6 +169,33 @@ class Pyauth:
                 )
                 account.permissions = permission.permissions
                 return account
+
+    async def get_current_session(self, access_token: str) -> Session:
+        """Get the current account from a valid access token"""
+        async with self._storage.session() as storage:
+            async with self._session_adapter.set_storage_session(
+                storage
+            ) as session_adapter:
+                # Verify the session and get account_uid
+                session = await session_adapter.verify(access_token)
+
+                permission = await storage.get(
+                    Role,
+                    filters={
+                        "account_uid": session.account_uid,
+                        "session_uid": session.sid,
+                    },
+                )
+                if permission:
+                    session.permissions = permission.permissions
+                return session
+
+    async def refresh_session(self, refresh_token: str) -> Session:
+        async with self._storage.session() as storage:
+            async with self._session_adapter.set_storage_session(
+                storage
+            ) as session_adapter:
+                return session_adapter.refresh_access_token(refresh_token)
 
     # roles
     def grant(self):

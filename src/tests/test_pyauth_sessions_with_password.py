@@ -26,7 +26,7 @@ async def test_start_get_end_session_flow(pyauth):
     assert any(s.sid == session.sid for s in sessions)
 
     # get current account from token
-    current = await pyauth.get_current_account(session.access_token)
+    current = await pyauth.get_current_account_from_session(session.access_token)
     assert current.uid == account.uid
 
     # end session (set inactive)
@@ -57,9 +57,9 @@ async def test_multiple_concurrent_sessions(pyauth):
     assert len(sessions) >= 3
 
     # Each session should work independently
-    current1 = await pyauth.get_current_account(session1.access_token)
-    current2 = await pyauth.get_current_account(session2.access_token)
-    current3 = await pyauth.get_current_account(session3.access_token)
+    current1 = await pyauth.get_current_account_from_session(session1.access_token)
+    current2 = await pyauth.get_current_account_from_session(session2.access_token)
+    current3 = await pyauth.get_current_account_from_session(session3.access_token)
 
     assert current1.uid == account.uid
     assert current2.uid == account.uid
@@ -70,11 +70,11 @@ async def test_multiple_concurrent_sessions(pyauth):
 
     # session2 should be invalid
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(session2.access_token)
+        await pyauth.get_current_account_from_session(session2.access_token)
 
     # session1 and session3 should still work
-    current1 = await pyauth.get_current_account(session1.access_token)
-    current3 = await pyauth.get_current_account(session3.access_token)
+    current1 = await pyauth.get_current_account_from_session(session1.access_token)
+    current3 = await pyauth.get_current_account_from_session(session3.access_token)
     assert current1.uid == account.uid
     assert current3.uid == account.uid
 
@@ -123,15 +123,15 @@ async def test_invalid_token_scenarios(pyauth):
 
     # Test with malformed token
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account("invalid.token.here")
+        await pyauth.get_current_account_from_session("invalid.token.here")
 
     # Test with empty token
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account("")
+        await pyauth.get_current_account_from_session("")
 
     # Test with None token
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(None)
+        await pyauth.get_current_account_from_session(None)
 
     # Test with non-existent session ID in token
     # Create a fake token with non-existent session ID
@@ -141,7 +141,7 @@ async def test_invalid_token_scenarios(pyauth):
     fake_token = token.create({"sid": "fake-session-id", "account_uid": account.uid})
 
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(fake_token)
+        await pyauth.get_current_account_from_session(fake_token)
 
 
 @pytest.mark.asyncio
@@ -178,14 +178,14 @@ async def test_session_verification_with_expiry(pyauth):
     session = await pyauth.start_session(payload)
 
     # Valid session should work
-    current = await pyauth.get_current_account(session.access_token)
+    current = await pyauth.get_current_account_from_session(session.access_token)
     assert current.uid == account.uid
 
     # End session and verify it's invalid
     await pyauth.end_session(session.sid)
 
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(session.access_token)
+        await pyauth.get_current_account_from_session(session.access_token)
 
 
 @pytest.mark.asyncio
@@ -232,7 +232,7 @@ async def test_session_with_permissions(pyauth, initialized_storage, rbac_permis
 
     # Start session
     session = await pyauth.start_session(payload)
-    current = await pyauth.get_current_account(session.access_token)
+    current = await pyauth.get_current_account_from_session(session.access_token)
 
     # Verify we can get the account with permissions
     assert current.uid == account.uid
@@ -280,7 +280,7 @@ async def test_concurrent_session_operations(pyauth):
 
     # All should be valid
     for session in sessions:
-        current = await pyauth.get_current_account(session.access_token)
+        current = await pyauth.get_current_account_from_session(session.access_token)
         assert current.uid == account.uid
 
     # Verify all sessions are listed
@@ -374,7 +374,9 @@ async def test_complete_real_world_auth_flow(
 
     for device, activity, session in activities:
         # Verify session is still valid
-        current_user = await pyauth.get_current_account(session.access_token)
+        current_user = await pyauth.get_current_account_from_session(
+            session.access_token
+        )
         assert current_user.uid == account.uid
         assert current_user.permissions == ["read", "create", "update"]
 
@@ -407,11 +409,15 @@ async def test_complete_real_world_auth_flow(
 
     # Verify tablet session is invalid
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(tablet_session.access_token)
+        await pyauth.get_current_account_from_session(tablet_session.access_token)
 
     # Desktop and mobile should still work
-    desktop_user = await pyauth.get_current_account(desktop_session.access_token)
-    mobile_user = await pyauth.get_current_account(mobile_session.access_token)
+    desktop_user = await pyauth.get_current_account_from_session(
+        desktop_session.access_token
+    )
+    mobile_user = await pyauth.get_current_account_from_session(
+        mobile_session.access_token
+    )
     assert desktop_user.uid == account.uid
     assert mobile_user.uid == account.uid
 
@@ -451,10 +457,10 @@ async def test_complete_real_world_auth_flow(
 
     # All sessions should now be invalid
     with pytest.raises(InvalidAccount):
-        await pyauth.get_current_account(desktop_session.access_token)
+        await pyauth.get_current_account_from_session(desktop_session.access_token)
 
     with pytest.raises(InvalidAccount):
-        await pyauth.get_current_account(mobile_session.access_token)
+        await pyauth.get_current_account_from_session(mobile_session.access_token)
 
     # === PHASE 7: ACCOUNT RECOVERY ===
     print("Phase 7: Account Recovery")
@@ -491,7 +497,9 @@ async def test_complete_real_world_auth_flow(
     )
 
     # Verify new session works
-    recovered_user = await pyauth.get_current_account(new_session.access_token)
+    recovered_user = await pyauth.get_current_account_from_session(
+        new_session.access_token
+    )
     assert recovered_user.uid == account.uid
     assert recovered_user.is_active is True
     assert recovered_user.is_blocked is False
@@ -542,10 +550,10 @@ async def test_complete_real_world_auth_flow(
 
     # All sessions should be invalid
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(new_session.access_token)
+        await pyauth.get_current_account_from_session(new_session.access_token)
 
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(new_password_session.access_token)
+        await pyauth.get_current_account_from_session(new_password_session.access_token)
 
     # Permissions should be cleaned up
     async with initialized_storage.begin() as storage:
@@ -628,7 +636,9 @@ async def test_enterprise_user_workflow(pyauth, initialized_storage, rbac_permis
         "project_planning",
         "evening_report",
     ]:
-        current_manager = await pyauth.get_current_account(manager_session.access_token)
+        current_manager = await pyauth.get_current_account_from_session(
+            manager_session.access_token
+        )
         assert current_manager.permissions == ["read", "create", "update", "delete"]
 
     # === EMPLOYEE LOGINS ===
@@ -648,7 +658,9 @@ async def test_enterprise_user_workflow(pyauth, initialized_storage, rbac_permis
 
     # === VERIFY ACCESS CONTROL ===
     for emp_session in employee_sessions:
-        emp_user = await pyauth.get_current_account(emp_session.access_token)
+        emp_user = await pyauth.get_current_account_from_session(
+            emp_session.access_token
+        )
         # Employees should not have delete access
         assert "delete" not in emp_user.permissions
         # But should have basic access
@@ -676,10 +688,10 @@ async def test_enterprise_user_workflow(pyauth, initialized_storage, rbac_permis
 
     # All sessions should be invalid
     with pytest.raises(InvalidSession):
-        await pyauth.get_current_account(manager_session.access_token)
+        await pyauth.get_current_account_from_session(manager_session.access_token)
 
     for emp_session in employee_sessions:
         with pytest.raises(InvalidSession):
-            await pyauth.get_current_account(emp_session.access_token)
+            await pyauth.get_current_account_from_session(emp_session.access_token)
 
     print("Enterprise workflow test passed! 🏢")

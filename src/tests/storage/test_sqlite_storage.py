@@ -1,10 +1,40 @@
 import pytest
 from src.pyauth.storage.sqlite import SQLite
 from src.pyauth.models import Account
+from .test_storage_base import BaseStorageTest
 
 
+class TestSQLiteStorage(BaseStorageTest):
+    """SQLite storage implementation tests"""
+
+    async def get_storage(self):
+        """Get SQLite storage instance for testing"""
+        import tempfile
+        import os
+
+        # Create a temporary database file
+        temp_dir = tempfile.mkdtemp()
+        db_path = os.path.join(temp_dir, "test.db")
+        return SQLite(db_path)
+
+    async def cleanup_storage(self, storage):
+        """Clean up SQLite storage after tests"""
+        # SQLite cleanup is handled by tempfile cleanup
+        pass
+
+    @pytest.fixture
+    def tmp_path(self):
+        """Provide tmp_path for backward compatibility with existing tests"""
+        import tempfile
+
+        return tempfile.mkdtemp()
+
+
+# Legacy function-based tests for backward compatibility
+# These tests are kept for backward compatibility but new tests should use TestSQLiteStorage class
 @pytest.mark.asyncio
 async def test_sqlite_crud(tmp_path):
+    """Legacy test - use TestSQLiteStorage class instead"""
     db_path = str(tmp_path / "t.db")
     storage = SQLite(db_path)
 
@@ -37,6 +67,7 @@ async def test_sqlite_crud(tmp_path):
 
 @pytest.mark.asyncio
 async def test_list_with_filters_and_contains(tmp_path):
+    """Legacy test - use TestSQLiteStorage class instead"""
     db_path = str(tmp_path / "filters.db")
     storage = SQLite(db_path)
 
@@ -58,6 +89,7 @@ async def test_list_with_filters_and_contains(tmp_path):
 
 @pytest.mark.asyncio
 async def test_pagination_after_id(tmp_path):
+    """Legacy test - use TestSQLiteStorage class instead"""
     db_path = str(tmp_path / "pagination.db")
     storage = SQLite(db_path)
 
@@ -83,6 +115,7 @@ async def test_pagination_after_id(tmp_path):
 
 @pytest.mark.asyncio
 async def test_init_index_and_noop(tmp_path):
+    """Legacy test - use TestSQLiteStorage class instead"""
     db_path = str(tmp_path / "index.db")
     storage = SQLite(db_path)
 
@@ -95,6 +128,7 @@ async def test_init_index_and_noop(tmp_path):
 
 @pytest.mark.asyncio
 async def test_update_with_no_valid_fields_returns_none(tmp_path):
+    """Legacy test - use TestSQLiteStorage class instead"""
     db_path = str(tmp_path / "update_none.db")
     storage = SQLite(db_path)
 
@@ -108,6 +142,7 @@ async def test_update_with_no_valid_fields_returns_none(tmp_path):
 
 @pytest.mark.asyncio
 async def test_get_without_filters_raises(tmp_path):
+    """Legacy test - use TestSQLiteStorage class instead"""
     db_path = str(tmp_path / "get_err.db")
     storage = SQLite(db_path)
 
