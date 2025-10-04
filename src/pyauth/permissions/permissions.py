@@ -51,7 +51,7 @@ class Permissions(ABC):
         pass
 
     @abstractmethod
-    async def get(self):
+    async def get(self, role: Role):
         pass
 
     @abstractmethod

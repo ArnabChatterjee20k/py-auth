@@ -91,6 +91,7 @@ class Model(ABC):
 
             schema[field_name] = {
                 "type": None,
+                "sub_type": None,
                 "default": default,
                 "primary_key": metadata.get("primary_key", False),
                 "index": metadata.get("index", False),
@@ -109,6 +110,11 @@ class Model(ABC):
                 or str(field_type).startswith("typing.Dict")
             ):
                 schema[field_name]["type"] = "json"
+                if origin == list or str(field_type).startswith("typing.List"):
+                    schema[field_name]["sub_type"] = "list"
+                elif origin == dict or str(field_type).startswith("typing.Dict"):
+                    schema[field_name]["sub_type"] = "dict"
+
             else:
                 schema[field_name]["type"] = [
                     (

@@ -48,15 +48,18 @@ class RBAC(Permissions):
         filters = role.to_dict(exclude=["permissions"], include_none=False)
         # sqlite doesn't implement row level locking
         account_role = await session.get(model=Role, for_update=True, filters=filters)
+        role_filters_exclude = ["permissions"]
+        if not role.session_uid:
+            role_filters_exclude.append("session_uid")
         updated_accont_role = await session.update(
             Role,
-            filters={"id": account_role.id, **role.to_dict(["permissions"])},
+            filters={"id": account_role.id, **role.to_dict(role_filters_exclude)},
             updates={"permissions": role.permissions},
         )
         return updated_accont_role
 
     async def check(self, role: Role):
-        permission = self.get(role)
+        permission = await self.get(role)
         if permission:
             return True
         return False
@@ -70,15 +73,12 @@ class RBAC(Permissions):
             p for p in account_role.permissions if p not in permissions_to_remove
         ]
 
-        if not new_permissions:
-            return account_role
-
         account_role.permissions = new_permissions
         return await self.update(account_role)
 
     async def delete(self, account_id: str, session_id: str | None = None):
         session = self.get_storage_session()
-        filters = {"account_id": account_id}
+        filters = {"account_uid": account_id}
         if session_id:
             filters["session_id"] = session_id
         await session.delete(Role, filters=filters)

@@ -98,8 +98,14 @@ class SessionAdapter:
         storage = self.get_storage_session()
         exclude = ["sid", "account_uid", "created_at"]
         updates = session.to_dict(exclude=exclude)
-        updates["updated_at"] = datetime.utcnow()
+        updates["updated_at"] = datetime.now()
         return await storage.update(SessionModel, {"sid": session.sid}, updates)
+
+    async def update_by_sid(self, sid: str, updates: dict) -> SessionModel:
+        """Update session by sid with updates dict"""
+        storage = self.get_storage_session()
+        updates["updated_at"] = datetime.now()
+        return await storage.update(SessionModel, {"sid": sid}, updates)
 
     async def delete(self, sid: str) -> bool:
         return await self.get_storage_session().delete(
@@ -191,16 +197,24 @@ class SessionAdapter:
         )
 
     async def block(self, sid: str) -> SessionModel:
-        return await self.update(sid, {"is_blocked": True, "is_active": False})
+        return await self.update_by_sid(sid, {"is_blocked": True, "is_active": False})
 
     async def unblock(self, sid: str) -> SessionModel:
-        return await self.update(sid, {"is_blocked": False, "is_active": True})
+        return await self.update_by_sid(sid, {"is_blocked": False, "is_active": True})
 
     async def set_session_active(self, sid: str, active: bool = True) -> SessionModel:
-        return await self.update(sid, {"is_active": active})
+        return await self.update_by_sid(sid, {"is_active": active})
 
     async def extend(self, sid: str, seconds: int) -> SessionModel:
         session = await self.get(sid)
         if session.expires_at:
             session.expires_at += timedelta(seconds=seconds)
-        return await self.update(sid, {"expires_at": session.expires_at})
+        return await self.update_by_sid(sid, {"expires_at": session.expires_at})
+
+    async def bulk_delete_by_account(self, account_uid: str) -> int:
+        """Delete all sessions for a specific account using bulk delete"""
+        storage = self.get_storage_session()
+        result = await storage.bulk_delete(
+            SessionModel, filters={"account_uid": account_uid}
+        )
+        return result

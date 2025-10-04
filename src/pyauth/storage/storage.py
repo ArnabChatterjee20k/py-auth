@@ -19,6 +19,14 @@ class StorageSession(ABC):
     ) -> T: ...
     @abstractmethod
     async def delete(self, model: Union[T, Type[T]], filters: dict) -> bool: ...
+
+    @abstractmethod
+    async def bulk_delete(
+        self,
+        model: Union[T, Type[T]],
+        filters: Optional[dict] = None,
+        contains: Optional[dict] = None,
+    ) -> int: ...
     @abstractmethod
     async def get(
         self,

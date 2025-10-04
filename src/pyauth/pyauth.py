@@ -2,10 +2,11 @@ from .providers import Provider, Payload, InvalidAccount
 import asyncio
 from .token import Token
 from .storage import Storage
-from .permissions import Permissions
+from .permissions import Permissions, RBAC
 from .models import Account, Session, Role
 from .session import SessionAdapter
 from typing import Optional, List
+from contextlib import asynccontextmanager
 
 
 class Pyauth:
@@ -13,12 +14,16 @@ class Pyauth:
         self,
         provider: Provider,
         storage: Storage,
-        permissions: Permissions,
-        token_secret: str,
+        permissions: Permissions = RBAC(),
+        token_secret: str | None = None,
     ):
         self._provider = provider
         self._storage = storage
         self._permissions = permissions
+        if not token_secret:
+            import secrets
+
+            token_secret = secrets.token_urlsafe(16)
         self._session_adapter = SessionAdapter(token_secret)
 
     async def init_schema(self):
@@ -59,17 +64,22 @@ class Pyauth:
                 async with self._permissions.set_storage_session(
                     storage
                 ) as permissions:
-                    async with asyncio.TaskGroup() as group:
-                        # TODO: delete sessions as well -> might be using some queuing mechanism(or might be let user do this)
-                        group.create_task(provider.delete(payload))
-                        group.create_task(permissions.delete(account.uid))
+                    async with self._session_adapter.set_storage_session(
+                        storage
+                    ) as session_adapter:
+                        async with asyncio.TaskGroup() as group:
+                            # Delete account, permissions, and all sessions
+                            group.create_task(provider.delete(payload))
+                            group.create_task(permissions.delete(account.uid))
+                            group.create_task(
+                                self._delete_all_sessions_for_account(
+                                    session_adapter, account.uid
+                                )
+                            )
 
     async def update_account(self, payload: Payload, updated_account: Account):
         async with self._storage.session() as storage:
             async with self._provider.set_storage_session(storage) as provider:
-                account = await provider.get(payload)
-                if not account:
-                    return InvalidAccount("Account not found")
                 account = await provider.update(payload, updated_account)
         return account
 
@@ -150,6 +160,14 @@ class Pyauth:
                 )
                 if not account:
                     raise InvalidAccount("Account not found")
+
+                if not account.is_active or account.is_blocked:
+                    raise InvalidAccount("Account is blocked or inactive")
+
+                permission = await storage.get(
+                    Role, filters={"account_uid": session.account_uid}
+                )
+                account.permissions = permission.permissions
                 return account
 
     # roles
@@ -175,3 +193,16 @@ class Pyauth:
 
     def require_role(self):
         pass
+
+    async def _delete_all_sessions_for_account(self, session_adapter, account_uid: str):
+        """Helper method to delete all sessions for a specific account using bulk delete"""
+        return await session_adapter.bulk_delete_by_account(account_uid)
+
+    @asynccontextmanager
+    async def as_admin(self):
+        """Context manager for admin operations that bypass payload verification"""
+        try:
+            self._provider.set_admin(True)
+            yield self
+        finally:
+            self._provider.set_admin(False)

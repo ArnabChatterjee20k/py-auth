@@ -16,6 +16,7 @@ class InvalidAccount(Exception):
 
 class Provider(ABC):
     _storage_session: StorageSession = None
+    _admin_operation: bool = False
 
     @asynccontextmanager
     async def set_storage_session(
@@ -31,6 +32,10 @@ class Provider(ABC):
         if self._storage_session is None:
             raise ValueError("Storage is not set")
         return self._storage_session
+
+    def set_admin(self, admin_operation: bool = False) -> None:
+        """Set admin mode for the provider"""
+        self._admin_operation = admin_operation
 
     @abstractmethod
     async def create(self, payload: Payload) -> Account:
